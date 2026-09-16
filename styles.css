@@ -1,0 +1,10 @@
+.my-mind-toggle,
+.my-mind-auto-layout {
+	color: var(--text-muted);
+}
+
+.my-mind-toggle.is-enabled,
+.my-mind-auto-layout:hover {
+	color: var(--interactive-accent);
+	background-color: var(--background-modifier-hover);
+}
