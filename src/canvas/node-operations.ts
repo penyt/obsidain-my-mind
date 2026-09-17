@@ -73,8 +73,7 @@ export class NodeOperations {
 		const parent = this.layout.getStructuralParent(canvas, node) ?? node;
 		const children = this.layout.getStructuralChildren(canvas, parent);
 		if (children.length === 0) return false;
-		this.layoutChildrenIfAllowed(canvas, parent, children);
-		return true;
+		return this.layoutChildrenIfAllowed(canvas, parent, children);
 	}
 
 	relayoutTreeContaining(canvas: Canvas, node: CanvasNode): boolean {
@@ -82,10 +81,10 @@ export class NodeOperations {
 	}
 
 	// Re-apply configured first-level branch colors without changing manual colors.
-	applyFirstLevelColors(canvas: Canvas): void {
+	applyFirstLevelColors(canvas: Canvas, preserveExistingAutoColors = false): void {
 		for (const node of canvas.nodes.values()) {
 			if (this.adapter.getParents(canvas, node).length > 0) continue;
-			this.colorFirstLevelBranches(canvas, node, this.adapter.getChildren(canvas, node));
+			this.colorFirstLevelBranches(canvas, node, this.adapter.getChildren(canvas, node), preserveExistingAutoColors);
 		}
 	}
 
@@ -135,7 +134,12 @@ export class NodeOperations {
 		return colors[(maxIndex + 1) % colors.length] ?? '1';
 	}
 
-	private colorFirstLevelBranches(canvas: Canvas, parent: CanvasNode, children: CanvasNode[]): void {
+	private colorFirstLevelBranches(
+		canvas: Canvas,
+		parent: CanvasNode,
+		children: CanvasNode[],
+		preserveExistingAutoColors: boolean,
+	): void {
 		if (!this.settings.autoColorFirstLevel) return;
 		if (!this.isRoot(canvas, parent)) return;
 
@@ -146,7 +150,9 @@ export class NodeOperations {
 
 		orderedChildren.forEach((child, index) => {
 			const paletteColor = colors[index % colors.length] ?? '1';
-			const color = getManualColor(child.getData()) ?? paletteColor;
+			const color = getManualColor(child.getData()) ??
+				(preserveExistingAutoColors ? getAutoColor(child.getData()) : null) ??
+				paletteColor;
 			this.colorBranch(canvas, child, color, new Set());
 		});
 	}
@@ -213,12 +219,12 @@ export class NodeOperations {
 	}
 
 	/** Skip automatic sibling layout when user-positioned subtrees are involved. */
-	private layoutChildrenIfAllowed(canvas: Canvas, parent: CanvasNode, children: CanvasNode[]): void {
-		if (!this.settings.autoLayoutSiblings) return;
-		if (parent.getData().myMindManualPosition === true) return;
-		if (this.hasManualPositionInSubtrees(canvas, children)) return;
+	private layoutChildrenIfAllowed(canvas: Canvas, parent: CanvasNode, children: CanvasNode[]): boolean {
+		if (!this.settings.autoLayoutSiblings) return false;
+		if (parent.getData().myMindManualPosition === true) return false;
+		if (this.hasManualPositionInSubtrees(canvas, children)) return false;
 
-		this.layout.layoutTreeContaining(canvas, parent);
+		return this.layout.layoutTreeContaining(canvas, parent);
 	}
 
 	private hasManualPositionInSubtrees(canvas: Canvas, roots: CanvasNode[]): boolean {

@@ -21,6 +21,7 @@ interface TreeLayoutNode {
 	direction: LayoutDirection;
 	incomingEdge?: CanvasEdge;
 	isRoot: boolean;
+	preserveManualPosition: boolean;
 }
 
 /**
@@ -226,24 +227,31 @@ export class MindmapLayout {
 		assignedNodeIds.add(node.id);
 		pathNodeIds.add(node.id);
 		const isRoot = this.getPrimaryIncomingEdge(canvas, node) === null;
-		const children = this.getLayoutChildEdges(canvas, node)
-			.map((edge) => {
-				const edgeData = edge.getData();
-				const child = canvas.nodes.get(edgeData.toNode);
-				if (!child) return null;
-				const childDirection = this.options.rootBranchDirections && isRoot && edgeData.fromSide === 'left' ? 'left' : direction;
-				return this.buildTree(canvas, child, assignedNodeIds, pathNodeIds, childDirection, edge);
-			})
-			.filter((child): child is TreeLayoutNode => child !== null);
+		const preserveManualPosition = node.getData().myMindManualPosition === true;
+		const children = preserveManualPosition
+			? []
+			: this.getLayoutChildEdges(canvas, node)
+				.map((edge) => {
+					const edgeData = edge.getData();
+					const child = canvas.nodes.get(edgeData.toNode);
+					if (!child) return null;
+					const childDirection = this.options.rootBranchDirections && isRoot && edgeData.fromSide === 'left' ? 'left' : direction;
+					return this.buildTree(canvas, child, assignedNodeIds, pathNodeIds, childDirection, edge);
+				})
+				.filter((child): child is TreeLayoutNode => child !== null);
+		const subtreeHeight = preserveManualPosition
+			? Math.max(node.height, getBBoxHeight(this.getNodesBBox(this.getSubtreeNodes(canvas, node))))
+			: node.height;
 		pathNodeIds.delete(node.id);
 
 		return {
 			node,
 			children,
-			subtreeHeight: node.height,
+			subtreeHeight,
 			direction,
 			incomingEdge,
 			isRoot,
+			preserveManualPosition,
 		};
 	}
 
@@ -272,8 +280,8 @@ export class MindmapLayout {
 
 	// Compute vertical space needed before assigning positions.
 	private computeSubtreeHeight(tree: TreeLayoutNode): number {
-		if (tree.children.length === 0) {
-			tree.subtreeHeight = tree.node.height;
+		if (tree.preserveManualPosition || tree.children.length === 0) {
+			tree.subtreeHeight = Math.max(tree.subtreeHeight, tree.node.height);
 			return tree.subtreeHeight;
 		}
 
@@ -298,10 +306,12 @@ export class MindmapLayout {
 		positions: Map<string, { x: number; y: number }>,
 		edgeSides: Map<string, { edge: CanvasEdge; fromSide: CanvasNodeSide; toSide: CanvasNodeSide }>,
 	): void {
-		positions.set(tree.node.id, {
-			x,
-			y: centerY - tree.node.height / 2,
-		});
+		if (!tree.preserveManualPosition) {
+			positions.set(tree.node.id, {
+				x,
+				y: centerY - tree.node.height / 2,
+			});
+		}
 
 		if (tree.incomingEdge) {
 			edgeSides.set(tree.incomingEdge.getData().id, {
@@ -432,6 +442,10 @@ export class MindmapLayout {
 }
 
 //------------ utility functions ------------
+function getBBoxHeight(bbox: CanvasBBox): number {
+	return bbox.maxY - bbox.minY;
+}
+
 function getOppositeSide(direction: LayoutDirection): CanvasNodeSide {
 	return direction === 'left' ? 'right' : 'left';
 }

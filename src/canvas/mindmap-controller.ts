@@ -249,7 +249,7 @@ export class MindmapController {
 
 		if (enabled) {
 			new Notice('Mindmap mode enabled');
-			this.getOperations().applyFirstLevelColors(canvas);
+			this.getOperations().applyFirstLevelColors(canvas, true);
 			this.pushNavigationScopeIfNeeded();
 			this.attachCanvas(canvas);
 		} else {

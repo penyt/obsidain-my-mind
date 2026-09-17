@@ -200,7 +200,10 @@ export function hasAmbiguousAncestor(canvas: Canvas, adapter: CanvasAdapter, nod
 
 export function setSelection(canvas: Canvas, nodes: CanvasNode[]): void {
 	const update = () => {
-		canvas.selection = new Set(nodes);
+		canvas.selection.clear();
+		for (const node of nodes) {
+			canvas.selection.add(node);
+		}
 	};
 
 	if (canvas.updateSelection) {
@@ -221,8 +224,14 @@ export function isPointerNearNodeEdge(event: PointerEvent, node: CanvasNode): bo
 	const nodeElement = node.nodeEl ?? node.containerEl;
 	if (!nodeElement) return false;
 
-	const edgeThreshold = 10;
 	const rect = nodeElement.getBoundingClientRect();
+	const isInsideNode = event.clientX >= rect.left &&
+		event.clientX <= rect.right &&
+		event.clientY >= rect.top &&
+		event.clientY <= rect.bottom;
+	if (!isInsideNode) return false;
+
+	const edgeThreshold = 10;
 	return event.clientX - rect.left <= edgeThreshold ||
 		rect.right - event.clientX <= edgeThreshold ||
 		event.clientY - rect.top <= edgeThreshold ||

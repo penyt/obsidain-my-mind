@@ -49,14 +49,15 @@ export class CanvasContextMenuController {
 		if (!this.isEnabled(canvas) || canvas.readonly) return;
 
 		const targets = this.getManualPositionMenuTargets(canvas, node);
-		if (!targets.some((target) => target.getData().myMindManualPosition === true)) return;
+		const resetTargets = this.getManualPositionResetTargets(canvas, targets);
+		if (!resetTargets.some((target) => target.getData().myMindManualPosition === true)) return;
 
 		menu.addItem((item) => {
 			item
 				.setSection('canvas')
 				.setTitle('Return to automatic layout')
 				.setIcon('refresh-cw')
-				.onClick(() => this.clearManualPositionsAndRelayout(canvas, targets));
+				.onClick(() => this.clearManualPositionsAndRelayout(canvas, resetTargets));
 		});
 	}
 
@@ -73,6 +74,47 @@ export class CanvasContextMenuController {
 		return Array.from(canvas.selection.values())
 			.map((element) => canvas.nodes.get(element.id))
 			.filter((selectedNode): selectedNode is CanvasNode => selectedNode !== undefined);
+	}
+
+	private getManualPositionResetTargets(canvas: Canvas, roots: CanvasNode[]): CanvasNode[] {
+		const targetsById = new Map<string, CanvasNode>();
+		for (const root of roots) {
+			const resetRoot = this.getHighestManualAncestor(canvas, root);
+			for (const node of this.getStructuralSubtreeNodes(canvas, resetRoot)) {
+				targetsById.set(node.id, node);
+			}
+		}
+		return Array.from(targetsById.values());
+	}
+
+	private getHighestManualAncestor(canvas: Canvas, node: CanvasNode): CanvasNode {
+		let current = node;
+		const visited = new Set<string>();
+
+		while (!visited.has(current.id)) {
+			visited.add(current.id);
+			const parent = this.adapter.getParents(canvas, current)[0];
+			if (!parent || parent.getData().myMindManualPosition !== true) return current;
+			current = parent;
+		}
+
+		return node;
+	}
+
+	private getStructuralSubtreeNodes(canvas: Canvas, root: CanvasNode): CanvasNode[] {
+		const nodes: CanvasNode[] = [];
+		const visited = new Set<string>();
+		const queue = [root];
+
+		while (queue.length > 0) {
+			const node = queue.shift();
+			if (!node || visited.has(node.id)) continue;
+			visited.add(node.id);
+			nodes.push(node);
+			queue.push(...this.adapter.getChildren(canvas, node));
+		}
+
+		return nodes;
 	}
 
 	/** Clear selected manual-position markers and relayout once as one batch. */

@@ -4,6 +4,6 @@
 	"version": "1.0.0",
 	"minAppVersion": "1.11.0",
 	"description": "Keyboard-first mindmap controls for Obsidian Canvas.",
-	"author": "My Mind contributors",
+	"author": "penyt",
 	"isDesktopOnly": true
 }
