@@ -3,7 +3,7 @@
 	"name": "My Mind",
 	"version": "1.0.0",
 	"minAppVersion": "1.11.0",
-	"description": "Keyboard-first mindmap controls for Obsidian Canvas.",
+	"description": "Create and organize Canvas mindmaps faster with Tab, Enter, Space, Esc, and subtree drag.",
 	"author": "penyt",
 	"isDesktopOnly": true
 }

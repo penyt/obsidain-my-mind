@@ -154,10 +154,10 @@ export class MindmapController {
 		container.querySelector(`#${TOGGLE_ID}`)?.remove();
 		container.querySelector(`#${AUTO_LAYOUT_BUTTON_ID}`)?.remove();
 
-		const button = container.ownerDocument.createElement('div');
-		button.id = TOGGLE_ID;
-		button.classList.add('canvas-control-item', 'my-mind-toggle');
-		button.setAttribute('role', 'button');
+		const button = container.createDiv({
+			cls: ['canvas-control-item', 'my-mind-toggle'],
+			attr: { id: TOGGLE_ID, role: 'button' },
+		});
 		button.tabIndex = 0;
 		setIcon(button, 'git-branch-plus');
 		setTooltip(button, 'Toggle mindmap mode', { placement: 'left' });
@@ -178,18 +178,17 @@ export class MindmapController {
 			button.click();
 		});
 
-		container.appendChild(button);
 		if (this.isEnabled(canvas)) {
-			container.appendChild(this.createAutoLayoutButton(canvas));
+			this.createAutoLayoutButton(container, canvas);
 		}
 	}
 
 	// Create the secondary Canvas control below the mindmap toggle.
-	private createAutoLayoutButton(canvas: Canvas): HTMLElement {
-		const button = canvas.view.containerEl.ownerDocument.createElement('div');
-		button.id = AUTO_LAYOUT_BUTTON_ID;
-		button.classList.add('canvas-control-item', 'my-mind-auto-layout');
-		button.setAttribute('role', 'button');
+	private createAutoLayoutButton(container: HTMLElement, canvas: Canvas): HTMLElement {
+		const button = container.createDiv({
+			cls: ['canvas-control-item', 'my-mind-auto-layout'],
+			attr: { id: AUTO_LAYOUT_BUTTON_ID, role: 'button' },
+		});
 		button.tabIndex = 0;
 		button.ariaLabel = 'Auto layout current mindmap canvas';
 		setIcon(button, 'layout-template');
