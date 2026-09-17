@@ -139,7 +139,8 @@ function getFontSource(node: CanvasNode): HTMLElement | null {
 // Use an offscreen canvas context only for text measurement.
 function getMeasureContext(node: CanvasNode): CanvasRenderingContext2D {
 	const document = node.nodeEl?.ownerDocument ?? activeDocument;
-	const canvas = document.createElement('canvas');
+	const canvas = document.body.createEl('canvas');
+	canvas.detach();
 	const context = canvas.getContext('2d');
 	if (!context) throw new Error('Could not create text measurement context.');
 	return context;

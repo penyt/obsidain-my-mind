@@ -6,6 +6,9 @@ My Mind is desktop-only. It uses Obsidian Canvas runtime internals that are not 
 
 When mindmap mode is enabled for a canvas, My Mind only intervenes in Canvas interactions needed for mindmap workflows, such as node creation, navigation, editing, subtree drag, and layout.
 
+![demo](img/demo.png)
+
+
 ## Features
 
 - Mode toggle: Canvas control toggle for each `.canvas` file. Turn on to activate My Mind's mindmap mode.  
