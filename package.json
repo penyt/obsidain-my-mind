@@ -1,6 +1,6 @@
 {
 	"name": "my-mind",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "Create and organize Canvas mindmaps faster with Tab, Enter, Space, Esc, and subtree drag.",
 	"main": "main.js",
 	"type": "module",
