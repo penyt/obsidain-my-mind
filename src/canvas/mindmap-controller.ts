@@ -64,6 +64,8 @@ export class MindmapController {
 	private readonly edgeMonitor: CanvasEdgeMonitor;
 	private readonly iframeListeners: CanvasIframeListeners;
 	private readonly finishingNodeIds = new Set<string>();
+	private readonly handledKeyEvents = new WeakSet<KeyboardEvent>();
+	private readonly canvasKeydownCleanups = new WeakMap<Canvas, () => void>();
 	private readonly scheduler = new CanvasWorkScheduler((canvas) => this.isScheduledCanvasActive(canvas));
 	private navigationScope: Scope | null = null;
 	private attachedCanvas: Canvas | null = null;
@@ -330,6 +332,14 @@ export class MindmapController {
 		return this.adapter.getCurrentCanvas();
 	}
 
+	private getKeyboardCanvas(): Canvas | null {
+		const currentCanvas = this.adapter.getCurrentCanvas();
+		if (currentCanvas) return currentCanvas;
+		if (!this.attachedCanvas || !this.isEnabled(this.attachedCanvas) || !isCanvasConnected(this.attachedCanvas)) return null;
+		return this.attachedCanvas;
+	}
+
+
 	private isScheduledCanvasActive(canvas: Canvas): boolean {
 		return (this.attachedCanvas === canvas || this.getCurrentCanvas() === canvas) &&
 			this.isEnabled(canvas) &&
@@ -367,6 +377,7 @@ export class MindmapController {
 	private attachCanvas(canvas: Canvas): void {
 		if (this.attachedCanvas && this.attachedCanvas !== canvas) this.detachCanvas(this.attachedCanvas);
 		this.attachedCanvas = canvas;
+		this.attachCanvasKeyboard(canvas);
 		this.attachCanvasIframes(canvas);
 		if (this.plugin.settings.rootBranchDirections) this.edgeMonitor.ensure(canvas);
 	}
@@ -375,11 +386,35 @@ export class MindmapController {
 	private detachCanvas(canvas: Canvas): void {
 		this.scheduler.cancelPendingWork(canvas);
 		this.scheduler.clearPointerListeners();
+		this.detachCanvasKeyboard(canvas);
 		if (this.attachedCanvas === canvas) {
 			this.detachCanvasIframes();
 			this.attachedCanvas = null;
 		}
 		this.edgeMonitor.disable(canvas);
+	}
+
+	private attachCanvasKeyboard(canvas: Canvas): void {
+		if (this.canvasKeydownCleanups.has(canvas)) return;
+		const targets = [canvas.wrapperEl, canvas.canvasEl]
+			.filter((target): target is HTMLElement => target instanceof HTMLElement)
+			.filter((target, index, array) => array.indexOf(target) === index);
+		if (targets.length === 0) return;
+
+		const listener = (event: KeyboardEvent) => this.handleKeydown(event);
+		for (const target of targets) {
+			target.addEventListener('keydown', listener, { capture: true });
+		}
+		this.canvasKeydownCleanups.set(canvas, () => {
+			for (const target of targets) {
+				target.removeEventListener('keydown', listener, { capture: true });
+			}
+		});
+	}
+
+	private detachCanvasKeyboard(canvas: Canvas): void {
+		this.canvasKeydownCleanups.get(canvas)?.();
+		this.canvasKeydownCleanups.delete(canvas);
 	}
 
 	private attachCanvasIframes(canvas: Canvas): void {
@@ -444,8 +479,10 @@ export class MindmapController {
 
 	/** Document/iframe key handler for creation and edit-finish shortcuts. */
 	private handleKeydown(event: KeyboardEvent): void {
-		const canvas = this.adapter.getCurrentCanvas();
+		if (this.handledKeyEvents.has(event)) return;
+		const canvas = this.getKeyboardCanvas();
 		if (!canvas || !this.isEnabled(canvas)) return;
+		this.handledKeyEvents.add(event);
 
 		this.attachCanvasIframes(canvas);
 
