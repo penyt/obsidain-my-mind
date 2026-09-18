@@ -57,7 +57,7 @@ export default class MyMindPlugin extends Plugin {
 
 	// load settings and migrate old data if needed
 	async loadSettings(): Promise<void> {
-		const loaded = (await this.loadData()) as Partial<MyMindSettings> & { subtreeDragMode?: 'always' | 'alt' | 'off' };
+		const loaded = ((await this.loadData()) ?? {}) as Partial<MyMindSettings> & { subtreeDragMode?: 'always' | 'alt' | 'off' };
 		this.settings = Object.assign(
 			{},
 			DEFAULT_SETTINGS,
