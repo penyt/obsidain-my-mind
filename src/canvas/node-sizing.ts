@@ -8,6 +8,7 @@ const MIN_WIDTH = 60;
 const MAX_WIDTH = 420;
 const MIN_HEIGHT = 52;
 const HORIZONTAL_SPACE = 40;
+const WIDTH_SAFETY_PADDING = 16;
 const VERTICAL_SPACE = 24;
 const HEIGHT_SAFETY_PADDING = 4;
 const FALLBACK_FONT_SIZE = 16;
@@ -42,7 +43,7 @@ export function fitTextNodeToContent(
 
 	const lines = text.split('\n');
 	const naturalWidth = Math.max(...lines.map((line) => measureLineWidth(context, line)));
-	const width = clamp(Math.ceil(naturalWidth + HORIZONTAL_SPACE), MIN_WIDTH, MAX_WIDTH);
+	const width = clamp(Math.ceil(naturalWidth + HORIZONTAL_SPACE + WIDTH_SAFETY_PADDING), MIN_WIDTH, MAX_WIDTH);
 	const contentWidth = Math.max(1, width - HORIZONTAL_SPACE);
 	const wrappedLineCount = getWrappedLineCount(context, lines, contentWidth);
 	const height = Math.max(
