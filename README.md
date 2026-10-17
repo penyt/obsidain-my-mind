@@ -8,6 +8,9 @@ When mindmap mode is enabled for a canvas, My Mind only intervenes in Canvas int
 
 ![demo](img/demo.png)
 
+YouTube demo video:
+[![YouTube demo video](https://img.youtube.com/vi/-gh7g1z9uHg/0.jpg)](https://www.youtube.com/watch?v=-gh7g1z9uHg)
+
 
 ## Features
 
